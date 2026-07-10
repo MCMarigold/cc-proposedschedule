@@ -1,0 +1,355 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Workload Balance — Current vs. Proposed — Marigold</title>
+<style>
+  :root {
+    --gold: #D39715;
+    --gold-light: #FDF6E3;
+    --gold-mid: #F5E6B8;
+    --text: #363430;
+    --text-muted: #7a7570;
+    --border: #e8e2d6;
+    --bg: #fafaf8;
+    --white: #ffffff;
+    --r-closed: #EDEDEB;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    font-size: 14px;
+    line-height: 1.5;
+  }
+
+  header {
+    background: var(--white);
+    border-bottom: 1px solid var(--border);
+    padding: 1.25rem 2rem;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 0.75rem;
+  }
+  .logo-mark {
+    width: 10px; height: 10px;
+    background: var(--gold);
+    border-radius: 50%;
+    display: inline-block;
+    margin-right: 8px;
+  }
+  header h1 { font-size: 16px; font-weight: 600; color: var(--text); }
+  header p  { font-size: 12px; color: var(--text-muted); margin-top: 1px; }
+  .badge {
+    font-size: 11px;
+    padding: 3px 10px;
+    border-radius: 20px;
+    background: var(--gold-mid);
+    color: #7a5c00;
+    font-weight: 500;
+  }
+
+  main { padding: 1.5rem 2rem; max-width: 1400px; margin: 0 auto; }
+
+  .intro-card {
+    background: var(--white);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 1rem 1.25rem;
+    margin-bottom: 1.5rem;
+    font-size: 13px;
+    color: var(--text-muted);
+    line-height: 1.55;
+  }
+  .intro-card strong { color: var(--text); }
+
+  .heatmap-section {
+    background: var(--white);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    overflow: hidden;
+    margin-bottom: 1.5rem;
+  }
+  .heatmap-header {
+    padding: 0.75rem 1rem;
+    border-bottom: 1px solid var(--border);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 8px;
+  }
+  .heatmap-header h2 { font-size: 13px; font-weight: 600; }
+  .legend {
+    display: flex;
+    gap: 12px;
+    flex-wrap: wrap;
+    font-size: 11px;
+    color: var(--text-muted);
+    align-items: center;
+  }
+  .li { display: flex; align-items: center; gap: 4px; }
+  .lsw { width: 11px; height: 11px; border-radius: 2px; flex-shrink: 0; }
+
+  .heatmap-body { padding: 1rem; overflow-x: auto; }
+
+  .hm-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 1.5rem;
+  }
+  .hm-col h3 {
+    font-size: 11px;
+    font-weight: 600;
+    margin-bottom: 6px;
+    padding: 3px 8px;
+    border-radius: 5px;
+    display: inline-block;
+  }
+  .hm-col.current h3  { background: #EAF3DE; color: #27500A; }
+  .hm-col.proposed h3 { background: #E6F1FB; color: #042C53; }
+
+  table.hm { border-collapse: collapse; width: 100%; table-layout: fixed; font-size: 10px; }
+  table.hm th, table.hm td {
+    border: 0.5px solid #ddd;
+    text-align: center;
+    vertical-align: middle;
+    height: 23px;
+    padding: 0;
+  }
+  th.hl {
+    width: 30px;
+    font-size: 9px;
+    color: var(--text-muted);
+    font-weight: 400;
+    text-align: right;
+    padding-right: 4px;
+  }
+  th.dh { font-size: 10px; font-weight: 600; color: var(--text); padding: 3px 1px; }
+
+  .hm td { font-size: 10px; font-weight: 600; cursor: default; }
+
+  .callout {
+    margin-top: 0.85rem;
+    background: var(--gold-light);
+    border-left: 3px solid var(--gold);
+    border-radius: 6px;
+    padding: 0.65rem 0.85rem;
+    font-size: 12px;
+    color: var(--text);
+    line-height: 1.5;
+  }
+  .callout strong { color: #7a5c00; }
+  .callout.warn { background: #FDEDEA; border-left-color: #A32D2D; }
+  .callout.warn strong { color: #7a1f1f; }
+
+  footer {
+    font-size: 11px;
+    color: var(--text-muted);
+    text-align: center;
+    padding: 1.5rem 0 2rem;
+    border-top: 1px solid var(--border);
+    margin-top: 0.5rem;
+  }
+
+  @media (max-width: 900px) {
+    .hm-grid { grid-template-columns: 1fr; }
+    main { padding: 1rem; }
+    header { padding: 1rem; }
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <div>
+    <h1><span class="logo-mark"></span>Workload Balance — Current vs. Proposed</h1>
+    <p>Marigold Home Inspections · Client Care Team · July 2026</p>
+  </div>
+  <span class="badge">Minutes of work per on-duty agent</span>
+</header>
+
+<main>
+
+  <div class="intro-card">
+    This overlays the total workload heatmap (calls + texts + email + bookings, including transition time) against
+    how many agents are actually scheduled at each hour, for both the current and proposed permanent schedules.
+    The number in each cell is <strong>estimated minutes of inbound work per on-duty agent</strong> — the same total
+    workload divided across however many people are covering that hour. Lower is better; it means the work is spread
+    across more people. This is the direct test of whether the proposed schedule change actually helps.
+    <br><br>
+    Maggie is excluded from the agent count during her recurring commitments — Mon 9–10am and Thu 9–11am (meetings) —
+    since she's not actually available to take contacts in those windows in either schedule. Weekly 1-on-1s are also
+    factored in: Alicia Fri 12:00–12:30pm, Deb Fri 11:00–11:30am, and Sara Fri 2:00–2:30pm each remove both Maggie
+    and that agent from the hour's count (a 30-minute meeting averages out to one fewer agent across the full hour).
+    Monday/Friday 1–2pm team meetings aren't modeled separately — phones go to DND during that hour, so the actual
+    contact volume already reflects it.
+  </div>
+
+  <!-- Heatmap -->
+  <div class="heatmap-section">
+    <div class="heatmap-header">
+      <h2>Estimated workload minutes per on-duty agent, by hour &amp; day</h2>
+      <div class="legend">
+        <span class="li"><span class="lsw" style="background:#FDF6E3;outline:1px solid #e8e2d6"></span>&lt;15 min light</span>
+        <span class="li"><span class="lsw" style="background:#F5E6B8"></span>15–22 min moderate</span>
+        <span class="li"><span class="lsw" style="background:#FAC775"></span>22–28 min busy</span>
+        <span class="li"><span class="lsw" style="background:#D85A30"></span>28–35 min heavy</span>
+        <span class="li"><span class="lsw" style="background:#A32D2D"></span>35+ min slammed</span>
+        <span class="li"><span class="lsw" style="background:#D3D1C7"></span>closed</span>
+      </div>
+    </div>
+    <div class="heatmap-body">
+      <div class="hm-grid">
+        <div class="hm-col current">
+          <h3>Current schedule</h3>
+          <table class="hm" id="hmCurrent"></table>
+        </div>
+        <div class="hm-col proposed">
+          <h3>Proposed schedule</h3>
+          <table class="hm" id="hmProposed"></table>
+        </div>
+      </div>
+      <div class="callout" id="calloutGood"></div>
+      <div class="callout warn" id="calloutWarn"></div>
+      <div class="callout warn" id="calloutOneOnOne"></div>
+    </div>
+  </div>
+
+</main>
+
+<footer>
+  Marigold Home Inspections · Client Care Operations · Workload data Jun 15 – Jul 6/7, 2026 (transition-time adjusted) · Generated July 2026
+</footer>
+
+<script>
+const HM_OPEN = {0:[7,20],1:[7,20],2:[7,20],3:[7,20],4:[7,20],5:[9,19],6:[9,19]};
+const HM_HOURS = [7,8,9,10,11,12,13,14,15,16,17,18,19];
+const HM_DAYS  = ['Mon','Tue','Wed','Thu','Fri','Sat','Sun'];
+
+// Minutes of total inbound workload (incl. 2min/contact transition time) ÷ agents on duty that hour.
+// 't' = total workload minutes that hour, 'a' = agent count, 'v' = t/a (the plotted value).
+const LOAD_CURRENT = {
+  0:{7:{t:22.9,a:1,v:22.9},8:{t:66.7,a:2,v:33.4},9:{t:73.8,a:2,v:36.9},10:{t:116.6,a:4,v:29.1},11:{t:90.0,a:3,v:30.0},12:{t:53.0,a:4,v:13.2},13:{t:26.5,a:4,v:6.6},14:{t:71.5,a:4,v:17.9},15:{t:69.7,a:3,v:23.2},16:{t:60.6,a:3,v:20.2},17:{t:53.8,a:2,v:26.9},18:{t:40.0,a:2,v:20.0},19:{t:16.2,a:3,v:5.4}},
+  1:{7:{t:10.8,a:1,v:10.8},8:{t:54.1,a:2,v:27.1},9:{t:77.5,a:3,v:25.8},10:{t:70.5,a:3,v:23.5},11:{t:51.3,a:2,v:25.7},12:{t:62.1,a:3,v:20.7},13:{t:77.0,a:3,v:25.7},14:{t:61.7,a:3,v:20.6},15:{t:40.3,a:2,v:20.1},16:{t:32.1,a:2,v:16.0},17:{t:41.8,a:1,v:41.8},18:{t:26.6,a:1,v:26.6},19:{t:13.3,a:2,v:6.7}},
+  2:{7:{t:13.0,a:1,v:13.0},8:{t:55.1,a:2,v:27.5},9:{t:61.9,a:3,v:20.6},10:{t:75.2,a:3,v:25.1},11:{t:74.2,a:2,v:37.1},12:{t:63.1,a:3,v:21.0},13:{t:76.1,a:3,v:25.4},14:{t:47.3,a:3,v:15.8},15:{t:49.7,a:2,v:24.9},16:{t:52.4,a:2,v:26.2},17:{t:30.4,a:1,v:30.4},18:{t:29.4,a:1,v:29.4},19:{t:23.3,a:2,v:11.6}},
+  3:{7:{t:12.6,a:1,v:12.6},8:{t:48.7,a:2,v:24.4},9:{t:79.6,a:2,v:39.8},10:{t:60.2,a:2,v:30.1},11:{t:46.9,a:2,v:23.5},12:{t:41.8,a:3,v:13.9},13:{t:56.8,a:3,v:18.9},14:{t:62.9,a:3,v:21.0},15:{t:64.1,a:2,v:32.1},16:{t:48.0,a:2,v:24.0},17:{t:19.3,a:1,v:19.3},18:{t:26.1,a:1,v:26.1},19:{t:15.9,a:2,v:8.0}},
+  4:{7:{t:7.0,a:1,v:7.0},8:{t:30.2,a:2,v:15.1},9:{t:60.6,a:3,v:20.2},10:{t:43.3,a:4,v:10.8},11:{t:29.9,a:1,v:29.9},12:{t:31.6,a:2,v:15.8},13:{t:48.0,a:3,v:16.0},14:{t:32.5,a:1,v:32.5},15:{t:37.6,a:2,v:18.8},16:{t:29.7,a:2,v:14.8},17:{t:35.9,a:1,v:35.9},18:{t:19.8,a:1,v:19.8},19:{t:17.8,a:1,v:17.8}},
+  5:{9:{t:34.0,a:1,v:34.0},10:{t:60.4,a:1,v:60.4},11:{t:43.7,a:1,v:43.7},12:{t:49.7,a:1,v:49.7},13:{t:54.5,a:1,v:54.5},14:{t:25.9,a:1,v:25.9},15:{t:35.2,a:1,v:35.2},16:{t:28.7,a:1,v:28.7},17:{t:15.9,a:1,v:15.9},18:{t:39.3,a:1,v:39.3}},
+  6:{9:{t:18.6,a:1,v:18.6},10:{t:33.0,a:1,v:33.0},11:{t:32.8,a:1,v:32.8},12:{t:25.3,a:2,v:12.6},13:{t:30.8,a:2,v:15.4},14:{t:25.8,a:2,v:12.9},15:{t:31.2,a:2,v:15.6},16:{t:38.3,a:2,v:19.2},17:{t:48.2,a:2,v:24.1},18:{t:38.1,a:2,v:19.0}}
+};
+
+const LOAD_PROPOSED = {
+  0:{7:{t:22.9,a:1,v:22.9},8:{t:66.7,a:3,v:22.2},9:{t:73.8,a:3,v:24.6},10:{t:116.6,a:4,v:29.1},11:{t:90.0,a:5,v:18.0},12:{t:53.0,a:4,v:13.2},13:{t:26.5,a:4,v:6.6},14:{t:71.5,a:4,v:17.9},15:{t:69.7,a:3,v:23.2},16:{t:60.6,a:3,v:20.2},17:{t:53.8,a:2,v:26.9},18:{t:40.0,a:2,v:20.0},19:{t:16.2,a:1,v:16.2}},
+  1:{7:{t:10.8,a:1,v:10.8},8:{t:54.1,a:2,v:27.1},9:{t:77.5,a:3,v:25.8},10:{t:70.5,a:3,v:23.5},11:{t:51.3,a:4,v:12.8},12:{t:62.1,a:3,v:20.7},13:{t:77.0,a:3,v:25.7},14:{t:61.7,a:3,v:20.6},15:{t:40.3,a:2,v:20.1},16:{t:32.1,a:2,v:16.0},17:{t:41.8,a:1,v:41.8},18:{t:26.6,a:2,v:13.3},19:{t:13.3,a:1,v:13.3}},
+  2:{7:{t:13.0,a:1,v:13.0},8:{t:55.1,a:2,v:27.5},9:{t:61.9,a:3,v:20.6},10:{t:75.2,a:3,v:25.1},11:{t:74.2,a:4,v:18.6},12:{t:63.1,a:3,v:21.0},13:{t:76.1,a:3,v:25.4},14:{t:47.3,a:3,v:15.8},15:{t:49.7,a:2,v:24.9},16:{t:52.4,a:2,v:26.2},17:{t:30.4,a:1,v:30.4},18:{t:29.4,a:2,v:14.7},19:{t:23.3,a:1,v:23.3}},
+  3:{7:{t:12.6,a:1,v:12.6},8:{t:48.7,a:2,v:24.4},9:{t:79.6,a:2,v:39.8},10:{t:60.2,a:2,v:30.1},11:{t:46.9,a:4,v:11.7},12:{t:41.8,a:3,v:13.9},13:{t:56.8,a:3,v:18.9},14:{t:62.9,a:3,v:21.0},15:{t:64.1,a:2,v:32.1},16:{t:48.0,a:2,v:24.0},17:{t:19.3,a:1,v:19.3},18:{t:26.1,a:2,v:13.0},19:{t:15.9,a:1,v:15.9}},
+  4:{7:{t:7.0,a:1,v:7.0},8:{t:30.2,a:3,v:10.1},9:{t:60.6,a:4,v:15.2},10:{t:43.3,a:4,v:10.8},11:{t:29.9,a:2,v:15.0},12:{t:31.6,a:2,v:15.8},13:{t:48.0,a:4,v:12.0},14:{t:32.5,a:2,v:16.3},15:{t:37.6,a:3,v:12.5},16:{t:29.7,a:3,v:9.9},17:{t:35.9,a:2,v:18.0},18:{t:19.8,a:1,v:19.8},19:{t:17.8,a:1,v:17.8}},
+  5:{9:{t:34.0,a:1,v:34.0},10:{t:60.4,a:1,v:60.4},11:{t:43.7,a:1,v:43.7},12:{t:49.7,a:1,v:49.7},13:{t:54.5,a:1,v:54.5},14:{t:25.9,a:1,v:25.9},15:{t:35.2,a:1,v:35.2},16:{t:28.7,a:1,v:28.7},17:{t:15.9,a:1,v:15.9},18:{t:39.3,a:1,v:39.3}},
+  6:{9:{t:18.6,a:1,v:18.6},10:{t:33.0,a:1,v:33.0},11:{t:32.8,a:1,v:32.8},12:{t:25.3,a:1,v:25.3},13:{t:30.8,a:1,v:30.8},14:{t:25.8,a:1,v:25.8},15:{t:31.2,a:1,v:31.2},16:{t:38.3,a:1,v:38.3},17:{t:48.2,a:1,v:48.2},18:{t:38.1,a:2,v:19.0}}
+};
+
+function loadBg(v, isOpen) {
+  if (!isOpen) return '#EDEDEB';
+  if (v < 15) return '#FDF6E3';
+  if (v < 22) return '#F5E6B8';
+  if (v < 28) return '#FAC775';
+  if (v < 35) return '#D85A30';
+  return '#A32D2D';
+}
+function loadFg(v, isOpen) {
+  if (!isOpen) return '#aaa';
+  if (v < 22) return '#412402';
+  return '#fff';
+}
+
+function buildLoadHM(id, DATA, otherData) {
+  const tbl = document.getElementById(id);
+  const thead = tbl.createTHead();
+  const hr = thead.insertRow();
+  let th = document.createElement('th'); th.className='hl'; hr.appendChild(th);
+  HM_DAYS.forEach(d => { th=document.createElement('th'); th.className='dh'; th.textContent=d; hr.appendChild(th); });
+  const tbody = tbl.createTBody();
+
+  HM_HOURS.forEach(h => {
+    const tr = tbody.insertRow();
+    const rh = document.createElement('th');
+    rh.className='hl';
+    rh.textContent = h<12?h+'a':h===12?'12p':(h-12)+'p';
+    tr.appendChild(rh);
+    HM_DAYS.forEach((d,di) => {
+      const td = tr.insertCell();
+      const isOpen = h>=HM_OPEN[di][0] && h<HM_OPEN[di][1];
+      const cell = (DATA[di]&&DATA[di][h]) || null;
+      const v = cell ? cell.v : 0;
+      td.style.background = loadBg(v, isOpen);
+      td.style.color = loadFg(v, isOpen);
+      if (isOpen && cell) {
+        td.textContent = Math.round(v);
+        td.title = `${d} ${h<12?h+'am':h===12?'12pm':(h-12)+'pm'}: ${Math.round(cell.t)} total min ÷ ${cell.a} agent${cell.a!==1?'s':''} on duty = ${v.toFixed(1)} min/agent`;
+      }
+    });
+  });
+}
+
+// Highlight cells where the two schedules differ meaningfully (≥8 min/agent swing)
+function markDeltas() {
+  const tables = [document.getElementById('hmCurrent'), document.getElementById('hmProposed')];
+  HM_HOURS.forEach((h, hi) => {
+    HM_DAYS.forEach((d, di) => {
+      const isOpen = h>=HM_OPEN[di][0] && h<HM_OPEN[di][1];
+      if (!isOpen) return;
+      const cur = (LOAD_CURRENT[di]&&LOAD_CURRENT[di][h]) || null;
+      const prop = (LOAD_PROPOSED[di]&&LOAD_PROPOSED[di][h]) || null;
+      if (!cur || !prop) return;
+      const delta = cur.v - prop.v; // positive = proposed is better (lower load) here
+      if (Math.abs(delta) >= 8) {
+        const curCell = tables[0].tBodies[0].rows[hi].cells[di+1];
+        const propCell = tables[1].tBodies[0].rows[hi].cells[di+1];
+        const color = delta > 0 ? '#27500A' : '#A32D2D'; // green outline = proposed helps here, red = proposed hurts
+        curCell.style.outline = `2px solid ${color}`;
+        curCell.style.outlineOffset = '-2px';
+        propCell.style.outline = `2px solid ${color}`;
+        propCell.style.outlineOffset = '-2px';
+      }
+    });
+  });
+}
+
+buildLoadHM('hmCurrent', LOAD_CURRENT, LOAD_PROPOSED);
+buildLoadHM('hmProposed', LOAD_PROPOSED, LOAD_CURRENT);
+markDeltas();
+
+// ── Callouts ──
+document.getElementById('calloutGood').innerHTML =
+  `<strong>Where the proposed schedule helps most:</strong> weekday late-morning (~11am) and evening (~6pm) handoff ` +
+  `windows go from 1–2 agents covering a heavy load down to 3–5 agents, roughly halving per-agent minutes ` +
+  `(e.g. Wed 11am: 37.1 → 18.6 min/agent; Fri 5pm: 35.9 → 18.0 min/agent). These are the outlined cells with a ` +
+  `green border above — the same total work, spread across more people.`;
+
+document.getElementById('calloutWarn').innerHTML =
+  `<strong>Where it creates new gaps:</strong> Two coverage drops show up. First, Sunday afternoon/evening (12pm–7pm) ` +
+  `goes from 2 agents to 1, since Alicia's Sunday shift moves to Friday — Sunday 5pm goes from 24.1 to 48.2 min/agent, ` +
+  `the largest single regression on the map. Second, 7pm Mon–Thu drops from Alicia + Monique (and Sara on Mondays) ` +
+  `down to Monique alone every night, because Alicia's shift now ends at 7pm instead of 8pm. Same total workload, ` +
+  `meaningfully less coverage in both windows — worth flagging as trade-offs before locking this in, not automatic wins.`;
+
+document.getElementById('calloutOneOnOne').innerHTML =
+  `<strong>Your 1-on-1s create solo-coverage windows:</strong> since you and the agent you're meeting with are both ` +
+  `out during that half hour, Fri 12pm drops to Deb+Sara in both schedules now (15.8 min/agent either way — moving ` +
+  `Alicia's 1-on-1 to Friday actually lands on a spot where the current and proposed schedules even out, since ` +
+  `Alicia isn't on duty at all in the current schedule's Friday but is in the proposed one, and removing her from ` +
+  `the proposed count brings it down to match). Fri 11am and Fri 2pm are still worse under the current schedule ` +
+  `(Sara alone at 29.9 min/agent, then Deb alone at 32.5) than under the proposed schedule, where Alicia's added ` +
+  `Friday shift leaves a second person on — Megan+Sara at 11am (15.0 min/agent) and Deb+Alicia at 2pm (16.3 ` +
+  `min/agent). Worth a backup plan for the current-schedule versions of those two windows if a call comes in with ` +
+  `zero slack.`;
+</script>
+</body>
+</html>

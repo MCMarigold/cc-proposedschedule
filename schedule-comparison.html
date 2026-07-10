@@ -1,0 +1,483 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>CC Schedule Comparison — Marigold</title>
+<style>
+  :root {
+    --gold: #D39715;
+    --gold-light: #FDF6E3;
+    --gold-mid: #F5E6B8;
+    --text: #363430;
+    --text-muted: #7a7570;
+    --border: #e8e2d6;
+    --bg: #fafaf8;
+    --white: #ffffff;
+    --r-none: #D3D1C7;
+    --r-closed: #EDEDEB;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    font-size: 14px;
+    line-height: 1.5;
+  }
+
+  /* ── Header ── */
+  header {
+    background: var(--white);
+    border-bottom: 1px solid var(--border);
+    padding: 1.25rem 2rem;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 0.75rem;
+  }
+  .logo-mark {
+    width: 10px; height: 10px;
+    background: var(--gold);
+    border-radius: 50%;
+    display: inline-block;
+    margin-right: 8px;
+  }
+  header h1 { font-size: 16px; font-weight: 600; color: var(--text); }
+  header p  { font-size: 12px; color: var(--text-muted); margin-top: 1px; }
+  .badge {
+    font-size: 11px;
+    padding: 3px 10px;
+    border-radius: 20px;
+    background: var(--gold-mid);
+    color: #7a5c00;
+    font-weight: 500;
+  }
+
+  /* ── Layout ── */
+  main { padding: 1.5rem 2rem; max-width: 1400px; margin: 0 auto; }
+
+  .grid-2 {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 1.5rem;
+    margin-bottom: 1.5rem;
+  }
+
+  .card {
+    background: var(--white);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    overflow: hidden;
+  }
+
+  .card-header {
+    padding: 0.75rem 1rem;
+    border-bottom: 1px solid var(--border);
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  .card-header h2 { font-size: 13px; font-weight: 600; }
+  .card-header p  { font-size: 11px; color: var(--text-muted); margin-top: 1px; }
+  .pill {
+    font-size: 10px;
+    padding: 2px 8px;
+    border-radius: 20px;
+    font-weight: 500;
+    margin-left: auto;
+    white-space: nowrap;
+  }
+  .pill-current  { background: #EAF3DE; color: #27500A; }
+  .pill-proposed { background: #E6F1FB; color: #042C53; }
+
+  /* ── Vertical day-view calendar ── */
+  .schedule-body { padding: 1rem 1rem 0.5rem; }
+
+  .dv-wrap {
+    display: grid;
+    grid-template-columns: 40px 1fr;
+    gap: 6px;
+  }
+
+  .dv-hourcol {
+    position: relative;
+  }
+  .dv-hour-label {
+    position: absolute;
+    right: 4px;
+    font-size: 9px;
+    color: var(--text-muted);
+    transform: translateY(-5px);
+    white-space: nowrap;
+  }
+
+  .dv-days {
+    display: grid;
+    grid-template-columns: 1.3fr 1.3fr 1.3fr 1.3fr 1.3fr 0.75fr 0.75fr;
+    gap: 3px;
+  }
+
+  .dv-daycol {
+    position: relative;
+    background: repeating-linear-gradient(
+      to bottom,
+      var(--border) 0px, var(--border) 1px,
+      transparent 1px, transparent var(--hr-px)
+    );
+    border-radius: 4px;
+    overflow: hidden;
+  }
+  .dv-closed {
+    position: absolute;
+    left: 0; right: 0;
+    background: var(--r-closed);
+  }
+
+  .dv-shift {
+    position: absolute;
+    border-radius: 4px;
+    padding: 2px 4px;
+    font-size: 9px;
+    font-weight: 600;
+    line-height: 1.25;
+    overflow: hidden;
+    box-shadow: inset 0 0 0 1px rgba(255,255,255,0.35);
+  }
+  .dv-shift .dv-name { display: block; font-size: 9.5px; }
+  .dv-shift .dv-time { display: block; font-size: 8px; font-weight: 500; opacity: 0.92; }
+
+  /* Day headers */
+  .day-headers {
+    display: grid;
+    grid-template-columns: 40px 6px 1fr;
+    gap: 6px;
+    margin-bottom: 4px;
+    padding: 0;
+  }
+  .day-labels {
+    display: grid;
+    grid-template-columns: 1.3fr 1.3fr 1.3fr 1.3fr 1.3fr 0.75fr 0.75fr;
+    gap: 3px;
+  }
+  .day-label {
+    font-size: 10px;
+    color: var(--text-muted);
+    text-align: center;
+    font-weight: 500;
+  }
+  .day-label .dl-sub { display:block; font-size:8px; color:#b0aca2; font-weight:400; }
+
+  .dv-legend {
+    display: flex;
+    gap: 14px;
+    flex-wrap: wrap;
+    font-size: 10px;
+    color: var(--text-muted);
+    padding: 0.5rem 1rem 0.75rem;
+    align-items: center;
+    border-top: 1px dashed var(--border);
+    margin-top: 0.5rem;
+  }
+  .dv-legend .li { display:flex; align-items:center; gap:5px; }
+  .dv-legend .swatch { width:14px; height:10px; border-radius:2px; flex-shrink:0; }
+
+  /* ── Changes section ── */
+  .changes-card {
+    background: var(--white);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 1rem 1.25rem;
+    margin-bottom: 1.5rem;
+  }
+  .changes-card h3 {
+    font-size: 12px;
+    font-weight: 600;
+    color: var(--text-muted);
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    margin-bottom: 0.75rem;
+  }
+  .changes-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 0.5rem;
+  }
+  .change-item {
+    display: flex;
+    gap: 8px;
+    align-items: flex-start;
+    font-size: 12px;
+    padding: 0.4rem 0.6rem;
+    background: var(--gold-light);
+    border-radius: 6px;
+    border-left: 3px solid var(--gold);
+  }
+  .change-item .arrow { color: var(--gold); font-weight: 700; flex-shrink: 0; margin-top: 1px; }
+
+  /* ── Footer ── */
+  footer {
+    font-size: 11px;
+    color: var(--text-muted);
+    text-align: center;
+    padding: 1.5rem 0 2rem;
+    border-top: 1px solid var(--border);
+    margin-top: 0.5rem;
+  }
+
+  @media (max-width: 800px) {
+    .grid-2 { grid-template-columns: 1fr; }
+    main { padding: 1rem; }
+    header { padding: 1rem; }
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <div>
+    <h1><span class="logo-mark"></span>CC Schedule Comparison</h1>
+    <p>Marigold Home Inspections · Client Care Team · June 2026</p>
+  </div>
+  <span class="badge">Proposed permanent schedule</span>
+</header>
+
+<main>
+
+  <!-- Changes summary -->
+  <div class="changes-card">
+    <h3>What changes in the proposed schedule</h3>
+    <div class="changes-grid">
+      <div class="change-item"><span class="arrow">↑</span><span><strong>Megan</strong> extended 8–11am → 8–12pm Mon–Fri</span></div>
+      <div class="change-item"><span class="arrow">↑</span><span><strong>Sara</strong> Mon &amp; Fri shift to 8am–6pm (was 10am–8pm)</span></div>
+      <div class="change-item"><span class="arrow">↑</span><span><strong>Alicia</strong> Mon–Thu to 11am–7pm (was 12–8pm); swaps Sunday for Friday 12–8pm</span></div>
+      <div class="change-item"><span class="arrow">↑</span><span><strong>Monique</strong> start moves to 6pm Sun–Thu (was 7pm)</span></div>
+    </div>
+  </div>
+
+  <!-- Shift bars -->
+  <div class="grid-2">
+
+    <!-- Current -->
+    <div class="card">
+      <div class="card-header">
+        <div>
+          <h2>Current schedule</h2>
+          <p>Standing shifts from baselines</p>
+        </div>
+        <span class="pill pill-current">Active</span>
+      </div>
+      <div class="schedule-body">
+        <div class="day-headers">
+          <div></div><div></div>
+          <div class="day-labels">
+            <div class="day-label">Mon<span class="dl-sub">7a–8p</span></div>
+            <div class="day-label">Tue<span class="dl-sub">7a–8p</span></div>
+            <div class="day-label">Wed<span class="dl-sub">7a–8p</span></div>
+            <div class="day-label">Thu<span class="dl-sub">7a–8p</span></div>
+            <div class="day-label">Fri<span class="dl-sub">7a–8p</span></div>
+            <div class="day-label">Sat<span class="dl-sub">9a–7p</span></div>
+            <div class="day-label">Sun<span class="dl-sub">9a–7p</span></div>
+          </div>
+        </div>
+        <div class="dv-wrap">
+          <div class="dv-hourcol" id="hourcol-current"></div>
+          <div class="dv-days" id="current-days"></div>
+        </div>
+      </div>
+      <div class="dv-legend" id="legend-current"></div>
+    </div>
+
+    <!-- Proposed -->
+    <div class="card">
+      <div class="card-header">
+        <div>
+          <h2>Proposed schedule</h2>
+          <p>Permanent changes under consideration</p>
+        </div>
+        <span class="pill pill-proposed">Proposed</span>
+      </div>
+      <div class="schedule-body">
+        <div class="day-headers">
+          <div></div><div></div>
+          <div class="day-labels">
+            <div class="day-label">Mon<span class="dl-sub">7a–8p</span></div>
+            <div class="day-label">Tue<span class="dl-sub">7a–8p</span></div>
+            <div class="day-label">Wed<span class="dl-sub">7a–8p</span></div>
+            <div class="day-label">Thu<span class="dl-sub">7a–8p</span></div>
+            <div class="day-label">Fri<span class="dl-sub">7a–8p</span></div>
+            <div class="day-label">Sat<span class="dl-sub">9a–7p</span></div>
+            <div class="day-label">Sun<span class="dl-sub">9a–7p</span></div>
+          </div>
+        </div>
+        <div class="dv-wrap">
+          <div class="dv-hourcol" id="hourcol-proposed"></div>
+          <div class="dv-days" id="proposed-days"></div>
+        </div>
+      </div>
+      <div class="dv-legend" id="legend-proposed"></div>
+    </div>
+
+  </div>
+
+</main>
+
+<footer>
+  Marigold Home Inspections · Client Care Operations · Generated July 2026
+</footer>
+
+<script>
+// ── Schedule data ──
+// Shifts: [startHour, endHour] or null. Index = day (0=Mon…6=Sun)
+// Hours as 24h. Open window M-F 7-20, Sat-Sun 9-19.
+
+const OPEN_START = [7,7,7,7,7,9,9]; // per DOW
+const OPEN_END   = [20,20,20,20,20,19,19];
+const AXIS_START = 7; // chart starts at 7am
+const AXIS_HRS   = 13; // 7am–8pm
+
+const AGENTS_CURRENT = [
+  { name:'Maggie', role:'Manager', color:'#378ADD', textColor:'#fff',
+    shifts:[  [7,15],[7,15],[7,15],[7,15],[7,15],null,null ] },
+  { name:'Deb',    role:'Full-time', color:'#639922', textColor:'#fff',
+    shifts:[ [9,17],[9,17],[9,17],[9,17],[9,17],null,null ] },
+  { name:'Megan',  role:'Part-time', color:'#BA7517', textColor:'#fff',
+    shifts:[ [8,11],[8,11],[8,11],[8,11],[8,11],null,null ] },
+  { name:'Alicia', role:'Full-time', color:'#D85A30', textColor:'#fff',
+    shifts:[ [12,20],[12,20],[12,20],[12,20],null,null,[12,20] ] },
+  { name:'Sara',   role:'Full-time', color:'#7F77DD', textColor:'#fff',
+    shifts:[ [10,20],null,null,null,[10,20],[9,19],[9,19] ] },
+  { name:'Monique',role:'Overnight', color:'#363430', textColor:'#fff',
+    shifts:[ [19,20],[19,20],[19,20],[19,20],null,null,[19,20] ] },
+];
+
+const AGENTS_PROPOSED = [
+  { name:'Maggie', role:'Manager', color:'#378ADD', textColor:'#fff',
+    shifts:[ [7,15],[7,15],[7,15],[7,15],[7,15],null,null ] },
+  { name:'Deb',    role:'Full-time', color:'#639922', textColor:'#fff',
+    shifts:[ [9,17],[9,17],[9,17],[9,17],[9,17],null,null ] },
+  { name:'Megan',  role:'Part-time', color:'#BA7517', textColor:'#fff',
+    shifts:[ [8,12],[8,12],[8,12],[8,12],[8,12],null,null ] },
+  { name:'Alicia', role:'Full-time', color:'#D85A30', textColor:'#fff',
+    shifts:[ [11,19],[11,19],[11,19],[11,19],[12,20],null,null ] },
+  { name:'Sara',   role:'Full-time', color:'#7F77DD', textColor:'#fff',
+    shifts:[ [8,18],null,null,null,[8,18],[9,19],[9,19] ] },
+  { name:'Monique',role:'Overnight', color:'#363430', textColor:'#fff',
+    shifts:[ [18,20],[18,20],[18,20],[18,20],null,null,[18,19] ] },
+];
+
+const DAYS = ['Mon','Tue','Wed','Thu','Fri','Sat','Sun'];
+
+function fmtHour(h) { return h < 12 ? h+'am' : h===12 ? '12pm' : (h-12)+'pm'; }
+
+const HR_PX = 32; // pixels per hour in the vertical view
+const GRID_HEIGHT = AXIS_HRS * HR_PX; // 13 hrs
+
+// ── Lane assignment: greedy interval coloring so overlapping shifts render side-by-side ──
+function assignLanes(shiftsForDay) {
+  const sorted = [...shiftsForDay].sort((a,b) => a.start - b.start);
+  const laneEnds = []; // end time currently occupying each lane
+  sorted.forEach(s => {
+    let laneIdx = laneEnds.findIndex(end => end <= s.start);
+    if (laneIdx === -1) { laneEnds.push(s.end); laneIdx = laneEnds.length - 1; }
+    else { laneEnds[laneIdx] = s.end; }
+    s.lane = laneIdx;
+  });
+  const totalLanes = laneEnds.length;
+  sorted.forEach(s => { s.totalLanes = totalLanes; });
+  return sorted;
+}
+
+function buildDayView(hourColId, daysContainerId, legendId, agents) {
+  document.documentElement.style.setProperty('--hr-px', HR_PX + 'px');
+
+  // Hour labels (left column)
+  const hourCol = document.getElementById(hourColId);
+  hourCol.style.height = GRID_HEIGHT + 'px';
+  for (let h = AXIS_START; h <= AXIS_START + AXIS_HRS; h++) {
+    const lbl = document.createElement('div');
+    lbl.className = 'dv-hour-label';
+    lbl.style.top = ((h - AXIS_START) * HR_PX) + 'px';
+    lbl.textContent = fmtHour(h);
+    hourCol.appendChild(lbl);
+  }
+
+  // Day columns
+  const daysContainer = document.getElementById(daysContainerId);
+  DAYS.forEach((d, di) => {
+    const col = document.createElement('div');
+    col.className = 'dv-daycol';
+    col.style.height = GRID_HEIGHT + 'px';
+    col.style.setProperty('--hr-px', HR_PX + 'px');
+
+    const os = OPEN_START[di], oe = OPEN_END[di];
+
+    if (os > AXIS_START) {
+      const closedTop = document.createElement('div');
+      closedTop.className = 'dv-closed';
+      closedTop.style.top = '0px';
+      closedTop.style.height = ((os - AXIS_START) * HR_PX) + 'px';
+      col.appendChild(closedTop);
+    }
+    if (oe < AXIS_START + AXIS_HRS) {
+      const closedBottom = document.createElement('div');
+      closedBottom.className = 'dv-closed';
+      closedBottom.style.top = ((oe - AXIS_START) * HR_PX) + 'px';
+      closedBottom.style.height = ((AXIS_START + AXIS_HRS - oe) * HR_PX) + 'px';
+      col.appendChild(closedBottom);
+    }
+
+    const dayShifts = [];
+    agents.forEach(agent => {
+      const shift = agent.shifts[di];
+      if (shift) dayShifts.push({ agent, start: shift[0], end: shift[1] });
+    });
+    const laned = assignLanes(dayShifts);
+
+    laned.forEach(s => {
+      const bar = document.createElement('div');
+      bar.className = 'dv-shift';
+      bar.style.top = ((s.start - AXIS_START) * HR_PX) + 'px';
+      bar.style.height = ((s.end - s.start) * HR_PX - 2) + 'px';
+      const laneWidth = 100 / s.totalLanes;
+      bar.style.left = (s.lane * laneWidth) + '%';
+      bar.style.width = (laneWidth - (s.totalLanes > 1 ? 1.5 : 0)) + '%';
+      bar.style.background = s.agent.color;
+      bar.style.color = s.agent.textColor;
+      bar.title = s.agent.name + ' — ' + d + ' ' + fmtHour(s.start) + '–' + fmtHour(s.end);
+
+      const hrs = s.end - s.start;
+      const nameEl = document.createElement('span');
+      nameEl.className = 'dv-name';
+      nameEl.textContent = s.agent.name;
+      bar.appendChild(nameEl);
+      if (hrs >= 2 || s.totalLanes === 1) {
+        const timeEl = document.createElement('span');
+        timeEl.className = 'dv-time';
+        timeEl.textContent = fmtHour(s.start) + '–' + fmtHour(s.end);
+        bar.appendChild(timeEl);
+      }
+      col.appendChild(bar);
+    });
+
+    daysContainer.appendChild(col);
+  });
+
+  // Legend — dynamically list agents present in this schedule
+  const legend = document.getElementById(legendId);
+  agents.forEach(agent => {
+    const item = document.createElement('span');
+    item.className = 'li';
+    item.innerHTML = '<span class="swatch" style="background:' + agent.color + '"></span>' + agent.name;
+    legend.appendChild(item);
+  });
+}
+
+buildDayView('hourcol-current', 'current-days', 'legend-current', AGENTS_CURRENT);
+buildDayView('hourcol-proposed', 'proposed-days', 'legend-proposed', AGENTS_PROPOSED);
+</script>
+</body>
+</html>
