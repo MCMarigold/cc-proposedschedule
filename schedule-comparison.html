@@ -185,6 +185,27 @@
   .dv-legend .li { display:flex; align-items:center; gap:5px; }
   .dv-legend .swatch { width:14px; height:10px; border-radius:2px; flex-shrink:0; }
 
+  /* ── Disclosure note ── */
+  .disclosure-card {
+    background: var(--white);
+    border: 1px solid var(--border);
+    border-left: 3px solid #355772;
+    border-radius: 10px;
+    padding: 0.85rem 1.25rem;
+    margin-bottom: 1.5rem;
+    font-size: 12.5px;
+    color: var(--text);
+    display: flex;
+    gap: 10px;
+    align-items: flex-start;
+  }
+  .disclosure-card .disclosure-icon {
+    font-size: 14px;
+    line-height: 1.3;
+    flex-shrink: 0;
+  }
+  .disclosure-card strong { font-weight: 600; }
+
   /* ── Changes section ── */
   .changes-card {
     background: var(--white);
@@ -256,6 +277,12 @@
       <div class="change-item"><span class="arrow">↑</span><span><strong>Alicia</strong> Mon–Thu to 11am–7pm (was 12–8pm); swaps Sunday for Friday 12–8pm</span></div>
       <div class="change-item"><span class="arrow">↑</span><span><strong>Monique</strong> start moves to 6pm Sun–Thu (was 7pm)</span></div>
     </div>
+  </div>
+
+  <!-- Weekend backup coverage disclosure -->
+  <div class="disclosure-card">
+    <span class="disclosure-icon">ℹ️</span>
+    <span><strong>Weekend coverage note:</strong> If Sara is ever out on a Saturday or Sunday shift, Alicia will be the first option for backup coverage, since she previously worked Sundays under the current schedule.</span>
   </div>
 
   <!-- Shift bars -->
